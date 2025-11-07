@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mini FX App Demo</title>
+  <title>Mini FX Broker – Live Candles</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+  <!-- Lightweight Charts (TradingView open-source) -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -29,16 +33,19 @@
       padding: 16px;
       display: flex;
       flex-direction: column;
+      gap: 14px;
     }
 
-    h1, h2, h3 {
-      font-weight: 700;
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .logo {
       font-weight: 900;
-      letter-spacing: 0.06em;
-      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      font-size: 1rem;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -48,31 +55,24 @@
       padding: 2px 6px;
       border-radius: 4px;
       background: #ef4444;
-      font-size: 0.75rem;
-    }
-
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
+      font-size: 0.7rem;
     }
 
     button {
       border: none;
       border-radius: 999px;
       padding: 8px 14px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       cursor: pointer;
       background: #22c55e;
       color: #022c22;
       font-weight: 600;
-      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
     }
 
     button:active {
       transform: scale(0.97);
-      box-shadow: 0 0 0;
+      box-shadow: none;
     }
 
     button.secondary {
@@ -81,23 +81,12 @@
       color: #e2e8f0;
     }
 
-    .screen {
-      flex: 1;
-      display: none;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .screen.active {
-      display: flex;
-    }
-
     .card {
-      background: rgba(15, 23, 42, 0.92);
+      background: rgba(15, 23, 42, 0.94);
       border-radius: 14px;
       padding: 14px;
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(148, 163, 184, 0.15);
+      border: 1px solid rgba(148, 163, 184, 0.18);
     }
 
     .card-header {
@@ -118,174 +107,67 @@
     }
 
     .danger {
-      color: #f97316;
+      color: #fb7185;
+      font-weight: 600;
     }
 
-    .input-group {
+    .input-row {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 10px;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
     }
 
-    label {
-      font-size: 0.8rem;
-      color: #9ca3af;
-    }
-
-    input, select {
+    select {
       background: #020617;
-      border-radius: 10px;
+      border-radius: 999px;
       border: 1px solid #1f2937;
-      padding: 8px 10px;
+      padding: 6px 10px;
       color: #f9fafb;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       outline: none;
     }
 
-    input:focus, select:focus {
+    select:focus {
       border-color: #22c55e;
     }
 
-    .balance-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      margin-top: 2px;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-      margin-bottom: 4px;
-    }
-
-    .tab {
-      flex: 1;
-      text-align: center;
-      padding: 6px 0;
-      font-size: 0.8rem;
-      border-radius: 999px;
-      border: 1px solid #1f2937;
-      cursor: pointer;
-      color: #9ca3af;
-    }
-
-    .tab.active {
-      background: #22c55e;
-      color: #022c22;
-      border-color: #22c55e;
-      font-weight: 600;
-    }
-
-    .symbol-list {
-      max-height: 180px;
-      overflow-y: auto;
-      margin-top: 8px;
-      border-radius: 10px;
-      border: 1px solid #1f2937;
-    }
-
-    .symbol-row {
-      display: grid;
-      grid-template-columns: 1.3fr 0.9fr 0.9fr 0.5fr;
-      font-size: 0.8rem;
-      padding: 8px 10px;
-      align-items: center;
-    }
-
-    .symbol-row:nth-child(odd) {
-      background: rgba(15, 23, 42, 0.9);
-    }
-
-    .symbol-row:nth-child(even) {
-      background: rgba(15, 23, 42, 0.6);
-    }
-
-    .symbol-name {
-      font-weight: 600;
-    }
-
-    .badge {
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      border-radius: 999px;
-      border: 1px solid #334155;
-      color: #9ca3af;
-    }
-
-    .positions-table {
+    #chartWrap {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 0.75rem;
-      margin-top: 6px;
-    }
-
-    .positions-table th,
-    .positions-table td {
-      padding: 4px 2px;
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    .positions-table th:first-child,
-    .positions-table td:first-child {
-      text-align: left;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-    }
-
-    .pill-buy {
-      background: rgba(22, 163, 74, 0.15);
-      color: #4ade80;
-    }
-
-    .pill-sell {
-      background: rgba(239, 68, 68, 0.18);
-      color: #fca5a5;
-    }
-
-    #chart {
-      width: 100%;
-      height: 160px;
-      background: radial-gradient(circle at top, #1e293b 0, #020617 75%);
+      height: 260px;
       border-radius: 12px;
       border: 1px solid #1f2937;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 75%);
+      margin-top: 8px;
+      overflow: hidden;
     }
 
-    canvas {
+    #chartContainer {
       width: 100%;
       height: 100%;
-      display: block;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    .label {
+      color: #9ca3af;
+    }
+
+    .value {
+      font-weight: 600;
     }
 
     .footer {
       text-align: center;
       font-size: 0.7rem;
       color: #6b7280;
-      margin-top: 8px;
-    }
-
-    .auth-box {
-      margin-top: 40px;
-    }
-
-    .error-msg {
-      color: #f97316;
-      font-size: 0.75rem;
       margin-top: 4px;
-    }
-
-    @media (max-height: 640px) {
-      .symbol-list {
-        max-height: 130px;
-      }
     }
   </style>
 </head>
@@ -293,648 +175,329 @@
 <div id="app">
   <div class="top-bar">
     <div class="logo">
-      FXAPP <span>DEMO</span>
+      FXAPP <span>LIVE DEMO</span>
     </div>
-    <button id="logoutBtn" class="secondary" style="display:none;">Logout</button>
+    <button class="secondary" id="refreshBtn" style="font-size:0.75rem; padding:4px 10px;">Refresh</button>
   </div>
 
-  <!-- AUTH SCREEN -->
-  <div id="authScreen" class="screen active">
-    <div class="card auth-box">
-      <div class="card-header">
-        <div>
-          <h2>Welcome</h2>
-          <p class="muted">Demo trading app (no real money, no backend)</p>
-        </div>
+  <!-- SYMBOL + INTERVAL SELECTION -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 id="symbolTitle">EUR/USD</h3>
+        <p class="muted" id="symbolSubtitle">5 min candles • Live market data (Twelve Data)</p>
       </div>
-
-      <div class="input-group" style="margin-top:12px;">
-        <label for="usernameInput">Username</label>
-        <input id="usernameInput" type="text" placeholder="Enter any username" />
+      <div style="text-align:right;">
+        <div class="muted" style="font-size:0.7rem;">Last</div>
+        <div id="lastPrice" class="highlight">–</div>
       </div>
+    </div>
 
-      <div class="input-group">
-        <label for="currencyInput">Account currency</label>
-        <select id="currencyInput">
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-          <option value="ZAR">ZAR</option>
+    <div class="input-row">
+      <div>
+        <div class="muted" style="font-size:0.7rem; margin-bottom:2px;">Symbol</div>
+        <select id="symbolSelect">
+          <!-- These are FX/metal symbols supported by Twelve Data -->
+          <option value="EUR/USD">EUR/USD</option>
+          <option value="GBP/USD">GBP/USD</option>
+          <option value="USD/JPY">USD/JPY</option>
+          <option value="USD/ZAR">USD/ZAR</option>
+          <option value="XAU/USD">XAU/USD</option>
+          <option value="XAG/USD">XAG/USD</option>
         </select>
       </div>
 
-      <div class="input-group">
-        <label for="balanceInput">Starting balance</label>
-        <input id="balanceInput" type="number" value="10000" min="100" />
+      <div>
+        <div class="muted" style="font-size:0.7rem; margin-bottom:2px;">Interval</div>
+        <select id="intervalSelect">
+          <option value="1min">1 min</option>
+          <option value="5min" selected>5 min</option>
+          <option value="15min">15 min</option>
+          <option value="1h">1 hour</option>
+          <option value="4h">4 hour</option>
+          <option value="1day">1 day</option>
+        </select>
       </div>
 
-      <button id="loginBtn" style="width:100%; margin-top:8px;">Enter Platform</button>
-      <div id="authError" class="error-msg" style="display:none;">Please enter a username.</div>
+      <div>
+        <div class="muted" style="font-size:0.7rem; margin-bottom:2px;">Bars</div>
+        <select id="barsSelect">
+          <option value="100">100</option>
+          <option value="200" selected>200</option>
+          <option value="400">400</option>
+        </select>
+      </div>
+    </div>
 
-      <p class="footer" style="margin-top:10px;">
-        This is a front-end demo only.<br/>
-        No execution. No real market access.
-      </p>
+    <div id="chartWrap">
+      <div id="chartContainer"></div>
+    </div>
+
+    <div class="price-row">
+      <span class="label">O:</span><span class="value" id="openVal">–</span>
+      <span class="label">H:</span><span class="value" id="highVal">–</span>
+      <span class="label">L:</span><span class="value" id="lowVal">–</span>
+      <span class="label">C:</span><span class="value" id="closeVal">–</span>
+    </div>
+
+    <div class="price-row">
+      <span class="muted" id="statusText">Waiting for data…</span>
+      <span class="muted" style="font-size:0.7rem;">Data: Twelve Data API</span>
     </div>
   </div>
 
-  <!-- MAIN TRADING SCREEN -->
-  <div id="mainScreen" class="screen">
-    <!-- ACCOUNT SUMMARY -->
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 id="accountName">Account</h3>
-          <p class="muted" id="accountInfo">Demo • 1:500 leverage</p>
-        </div>
-        <div style="text-align:right;">
-          <div class="muted" style="font-size:0.75rem;">Balance</div>
-          <div class="highlight" id="balanceDisplay">$10,000.00</div>
-        </div>
-      </div>
-
-      <div class="balance-row">
-        <span class="muted">Equity</span>
-        <span id="equityDisplay">$10,000.00</span>
-      </div>
-      <div class="balance-row">
-        <span class="muted">Free margin</span>
-        <span id="freeMarginDisplay">$10,000.00</span>
-      </div>
-      <div class="balance-row">
-        <span class="muted">Open P&amp;L</span>
-        <span id="pnlDisplay" class="highlight">0.00</span>
-      </div>
+  <!-- SIMPLE "TRADE" SECTION (FAKE, NO BACKEND) -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Quick Trade (Demo)</h3>
+      <span class="muted" style="font-size:0.75rem;">No real orders. UI only.</span>
     </div>
 
-    <!-- MARKET WATCH + CHART -->
-    <div class="card">
-      <div class="card-header">
-        <h3>Market</h3>
-        <button id="refreshBtn" class="secondary" style="font-size:0.75rem; padding:4px 10px;">Refresh prices</button>
-      </div>
-
-      <div class="tabs">
-        <div class="tab active" data-tab="fx">FX</div>
-        <div class="tab" data-tab="metals">Metals</div>
-        <div class="tab" data-tab="indices">Indices</div>
-        <div class="tab" data-tab="crypto">Crypto</div>
-      </div>
-
-      <div class="symbol-list" id="symbolList"></div>
-
-      <div style="margin-top:10px;">
-        <p class="muted" style="margin-bottom:4px;">
-          Chart: <span id="chartSymbolLabel">EURUSD</span>
-        </p>
-        <div id="chart">
-          <canvas id="chartCanvas"></canvas>
-        </div>
-      </div>
+    <div class="price-row">
+      <span class="label">Current price</span>
+      <span class="value" id="tradePrice">–</span>
     </div>
 
-    <!-- ORDER ENTRY + POSITIONS -->
-    <div class="card">
-      <div class="card-header">
-        <h3>Trade</h3>
-        <span class="muted" id="selectedSymbolLabel">Symbol: EURUSD</span>
+    <div class="input-row" style="margin-top:10px;">
+      <div style="flex:1;">
+        <div class="muted" style="font-size:0.7rem; margin-bottom:2px;">Volume (lots)</div>
+        <select id="volumeSelect" style="width:100%;">
+          <option value="0.01">0.01</option>
+          <option value="0.10" selected>0.10</option>
+          <option value="0.50">0.50</option>
+          <option value="1.00">1.00</option>
+        </select>
       </div>
-
-      <div class="input-group">
-        <label for="symbolSelect">Symbol</label>
-        <select id="symbolSelect"></select>
-      </div>
-
-      <div class="input-group">
-        <label for="volumeInput">Volume (lots)</label>
-        <input id="volumeInput" type="number" step="0.01" min="0.01" value="0.10" />
-      </div>
-
-      <div class="input-group">
-        <label>Current price</label>
-        <div class="balance-row" style="font-size:0.8rem;">
-          <span class="muted">Bid</span>
-          <span id="bidDisplay">1.00000</span>
-        </div>
-        <div class="balance-row" style="font-size:0.8rem;">
-          <span class="muted">Ask</span>
-          <span id="askDisplay">1.00020</span>
-        </div>
-      </div>
-
-      <div style="display:flex; gap:8px; margin-top:4px;">
+      <div style="display:flex; flex:1; gap:6px; align-items:flex-end;">
         <button id="buyBtn" style="flex:1; background:#22c55e; color:#022c22;">Buy</button>
         <button id="sellBtn" style="flex:1; background:#ef4444; color:#fef2f2;">Sell</button>
       </div>
-
-      <div id="orderError" class="error-msg" style="display:none;">Not enough free margin for this trade.</div>
-
-      <div style="margin-top:12px;">
-        <div class="card-header" style="padding:0; margin-bottom:4px;">
-          <h3 style="font-size:0.9rem;">Open positions</h3>
-          <span class="muted" id="positionsCount">0 positions</span>
-        </div>
-        <div style="max-height:140px; overflow-y:auto;">
-          <table class="positions-table" id="positionsTable">
-            <thead>
-              <tr>
-                <th>Sym</th>
-                <th>Side</th>
-                <th>Vol</th>
-                <th>Open</th>
-                <th>Price</th>
-                <th>P&amp;L</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="positionsBody">
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
-    <p class="footer">
-      DEMO ONLY • No execution • No licenses • Just UI + local simulation.
-    </p>
+    <div class="price-row" style="margin-top:10px;">
+      <span class="muted" id="lastAction">No trades yet (demo only).</span>
+    </div>
   </div>
+
+  <p class="footer">
+    DEMO FRONT-END • Real market data via API • No execution • No licensing<br/>
+    To build a real broker (XM/Exness style) you still need backend, LP, regulation, KYC, etc.
+  </p>
 </div>
 
 <script>
-  // -----------------------------
-  // BASIC STATE
-  // -----------------------------
-  const state = {
-    user: null,
-    currency: "USD",
-    balance: 10000,
-    equity: 10000,
-    freeMargin: 10000,
-    leverage: 500,
-    openPnL: 0,
-    positions: [],
-    symbols: {
-      EURUSD: { type: "fx", price: 1.0850, spread: 0.0002 },
-      GBPUSD: { type: "fx", price: 1.2750, spread: 0.00025 },
-      USDJPY: { type: "fx", price: 155.20, spread: 0.02 },
-      XAUUSD: { type: "metals", price: 2400.0, spread: 0.4 },
-      XAGUSD: { type: "metals", price: 28.0, spread: 0.05 },
-      US30:   { type: "indices", price: 41000, spread: 8 },
-      NAS100: { type: "indices", price: 18000, spread: 5 },
-      GER40:  { type: "indices", price: 19000, spread: 5 },
-      BTCUSD: { type: "crypto", price: 65000, spread: 30 },
-      ETHUSD: { type: "crypto", price: 3000, spread: 3 }
-    },
-    selectedSymbol: "EURUSD",
-    chartData: []
-  };
+  // -------------------------
+  // CONFIG – EDIT THIS PART
+  // -------------------------
+  // 1. Get a free API key from https://twelvedata.com/ and paste it below.
+  const API_KEY = "YOUR_TWELVEDATA_API_KEY_HERE";
 
-  // -----------------------------
-  // ELEMENTS
-  // -----------------------------
-  const authScreen = document.getElementById("authScreen");
-  const mainScreen = document.getElementById("mainScreen");
-  const logoutBtn = document.getElementById("logoutBtn");
+  // 2. Base URL for Twelve Data API
+  const BASE_URL = "https://api.twelvedata.com";
 
-  const usernameInput = document.getElementById("usernameInput");
-  const currencyInput = document.getElementById("currencyInput");
-  const balanceInput = document.getElementById("balanceInput");
-  const loginBtn = document.getElementById("loginBtn");
-  const authError = document.getElementById("authError");
-
-  const accountName = document.getElementById("accountName");
-  const accountInfo = document.getElementById("accountInfo");
-  const balanceDisplay = document.getElementById("balanceDisplay");
-  const equityDisplay = document.getElementById("equityDisplay");
-  const freeMarginDisplay = document.getElementById("freeMarginDisplay");
-  const pnlDisplay = document.getElementById("pnlDisplay");
-
-  const symbolList = document.getElementById("symbolList");
-  const tabs = document.querySelectorAll(".tab");
-  const chartSymbolLabel = document.getElementById("chartSymbolLabel");
-  const chartCanvas = document.getElementById("chartCanvas");
-
+  // -------------------------
+  // DOM ELEMENTS
+  // -------------------------
   const symbolSelect = document.getElementById("symbolSelect");
-  const selectedSymbolLabel = document.getElementById("selectedSymbolLabel");
-  const bidDisplay = document.getElementById("bidDisplay");
-  const askDisplay = document.getElementById("askDisplay");
-  const volumeInput = document.getElementById("volumeInput");
-  const buyBtn = document.getElementById("buyBtn");
-  const sellBtn = document.getElementById("sellBtn");
-  const orderError = document.getElementById("orderError");
-
-  const positionsBody = document.getElementById("positionsBody");
-  const positionsCount = document.getElementById("positionsCount");
-
+  const intervalSelect = document.getElementById("intervalSelect");
+  const barsSelect = document.getElementById("barsSelect");
   const refreshBtn = document.getElementById("refreshBtn");
 
-  // -----------------------------
-  // HELPERS
-  // -----------------------------
-  function fmt(value, currency = "USD", decimals = 2) {
-    return (currency === "USD" || currency === "EUR" || currency === "ZAR")
-      ? new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency,
-          minimumFractionDigits: decimals,
-          maximumFractionDigits: decimals
-        }).format(value)
-      : value.toFixed(decimals);
-  }
+  const symbolTitle = document.getElementById("symbolTitle");
+  const symbolSubtitle = document.getElementById("symbolSubtitle");
+  const lastPriceEl = document.getElementById("lastPrice");
 
-  function fmtNum(value, decimals = 2) {
-    return Number(value).toFixed(decimals);
-  }
+  const openVal = document.getElementById("openVal");
+  const highVal = document.getElementById("highVal");
+  const lowVal = document.getElementById("lowVal");
+  const closeVal = document.getElementById("closeVal");
+  const statusText = document.getElementById("statusText");
 
-  function generateChartData(basePrice) {
-    const data = [];
-    let price = basePrice;
-    for (let i = 0; i < 60; i++) {
-      const drift = (Math.random() - 0.5) * 0.002 * basePrice;
-      price = price + drift;
-      data.push(price);
-    }
-    return data;
-  }
+  const tradePriceEl = document.getElementById("tradePrice");
+  const volumeSelect = document.getElementById("volumeSelect");
+  const buyBtn = document.getElementById("buyBtn");
+  const sellBtn = document.getElementById("sellBtn");
+  const lastAction = document.getElementById("lastAction");
 
-  function drawChart() {
-    const canvas = chartCanvas;
-    const ctx = canvas.getContext("2d");
-    const width = canvas.width = canvas.clientWidth;
-    const height = canvas.height = canvas.clientHeight;
+  const chartContainer = document.getElementById("chartContainer");
 
-    const data = state.chartData;
-    if (!data || data.length === 0) return;
+  // -------------------------
+  // CHART SETUP
+  // -------------------------
+  let chart, candleSeries;
 
-    const min = Math.min(...data);
-    const max = Math.max(...data);
-    const range = max - min || 1;
-
-    ctx.clearRect(0, 0, width, height);
-
-    // grid
-    ctx.strokeStyle = "rgba(148, 163, 184, 0.2)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, height * 0.5);
-    ctx.lineTo(width, height * 0.5);
-    ctx.stroke();
-
-    // line
-    ctx.strokeStyle = "#22c55e";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    data.forEach((p, i) => {
-      const x = (i / (data.length - 1)) * width;
-      const y = height - ((p - min) / range) * height;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-  }
-
-  function updateAccountUI() {
-    balanceDisplay.textContent = fmt(state.balance, state.currency);
-    equityDisplay.textContent = fmt(state.equity, state.currency);
-    freeMarginDisplay.textContent = fmt(state.freeMargin, state.currency);
-
-    pnlDisplay.textContent = state.openPnL >= 0
-      ? "+" + fmtNum(state.openPnL, 2)
-      : fmtNum(state.openPnL, 2);
-    pnlDisplay.className = state.openPnL >= 0 ? "highlight" : "danger";
-  }
-
-  function calculatePnLAndMargins() {
-    let pnl = 0;
-    let usedMargin = 0;
-
-    state.positions.forEach(pos => {
-      const sym = state.symbols[pos.symbol];
-      if (!sym) return;
-      const midPrice = sym.price;
-      const contractSize = getContractSize(pos.symbol);
-      const direction = pos.side === "buy" ? 1 : -1;
-      const priceDiff = (midPrice - pos.entryPrice) * direction;
-      const positionPnL = priceDiff * contractSize * pos.volume;
-      pnl += positionPnL;
-
-      const margin = (sym.price * contractSize * pos.volume) / state.leverage;
-      usedMargin += margin;
-    });
-
-    state.openPnL = pnl;
-    state.equity = state.balance + pnl;
-    state.freeMargin = Math.max(state.equity - usedMargin, 0);
-  }
-
-  function getContractSize(symbol) {
-    // Simple illustrative values
-    if (symbol.endsWith("USD") && symbol.length === 6) return 100000; // FX
-    if (symbol === "XAUUSD") return 100; // gold
-    if (symbol === "XAGUSD") return 5000;
-    if (symbol === "US30" || symbol === "NAS100" || symbol === "GER40") return 1;
-    if (symbol === "BTCUSD") return 1;
-    if (symbol === "ETHUSD") return 10;
-    return 100000;
-  }
-
-  function updateSymbolPrices(randomize = true) {
-    Object.keys(state.symbols).forEach(key => {
-      const sym = state.symbols[key];
-      if (randomize) {
-        const volatilityFactor = sym.type === "indices" || sym.type === "crypto" ? 0.004 : 0.0015;
-        const change = (Math.random() - 0.5) * volatilityFactor * sym.price;
-        sym.price = Math.max(sym.price + change, 0.00001);
-      }
-    });
-    renderSymbolList(currentTab);
-    updateOrderPanel();
-    calculatePnLAndMargins();
-    updateAccountUI();
-    updatePositionsTable();
-    // update chart data slightly
-    const base = state.symbols[state.selectedSymbol].price;
-    state.chartData.push(base);
-    if (state.chartData.length > 60) state.chartData.shift();
-    drawChart();
-  }
-
-  // -----------------------------
-  // AUTH / NAVIGATION
-  // -----------------------------
-  loginBtn.addEventListener("click", () => {
-    const username = usernameInput.value.trim();
-    if (!username) {
-      authError.style.display = "block";
-      return;
-    }
-    authError.style.display = "none";
-
-    const startBalance = parseFloat(balanceInput.value) || 10000;
-    state.user = username;
-    state.currency = currencyInput.value || "USD";
-    state.balance = startBalance;
-    state.equity = startBalance;
-    state.freeMargin = startBalance;
-
-    accountName.textContent = username + " • Demo";
-    accountInfo.textContent = `${state.currency} • 1:${state.leverage} leverage`;
-    chartSymbolLabel.textContent = state.selectedSymbol;
-    selectedSymbolLabel.textContent = "Symbol: " + state.selectedSymbol;
-
-    authScreen.classList.remove("active");
-    mainScreen.classList.add("active");
-    logoutBtn.style.display = "inline-flex";
-
-    initSymbolSelect();
-    initChart();
-    updateSymbolPrices(false);
-    updateAccountUI();
-  });
-
-  logoutBtn.addEventListener("click", () => {
-    state.user = null;
-    authScreen.classList.add("active");
-    mainScreen.classList.remove("active");
-    logoutBtn.style.display = "none";
-  });
-
-  // -----------------------------
-  // MARKET TABS & SYMBOL LIST
-  // -----------------------------
-  let currentTab = "fx";
-
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      currentTab = tab.dataset.tab;
-      renderSymbolList(currentTab);
-    });
-  });
-
-  function renderSymbolList(tab) {
-    symbolList.innerHTML = "";
-    const fragment = document.createDocumentFragment();
-    Object.entries(state.symbols).forEach(([name, sym]) => {
-      if (
-        (tab === "fx" && sym.type !== "fx") ||
-        (tab === "metals" && sym.type !== "metals") ||
-        (tab === "indices" && sym.type !== "indices") ||
-        (tab === "crypto" && sym.type !== "crypto")
-      ) return;
-
-      const row = document.createElement("div");
-      row.className = "symbol-row";
-      row.dataset.symbol = name;
-
-      const bid = sym.price - sym.spread / 2;
-      const ask = sym.price + sym.spread / 2;
-
-      const nameCell = document.createElement("div");
-      nameCell.className = "symbol-name";
-      nameCell.textContent = name;
-
-      const bidCell = document.createElement("div");
-      bidCell.textContent = fmtNum(bid, sym.type === "fx" ? 5 : 2);
-
-      const askCell = document.createElement("div");
-      askCell.textContent = fmtNum(ask, sym.type === "fx" ? 5 : 2);
-
-      const actionCell = document.createElement("div");
-      const btn = document.createElement("button");
-      btn.textContent = "Select";
-      btn.className = "secondary";
-      btn.style.padding = "4px 8px";
-      btn.style.fontSize = "0.7rem";
-      btn.addEventListener("click", () => selectSymbol(name));
-      actionCell.appendChild(btn);
-
-      row.appendChild(nameCell);
-      row.appendChild(bidCell);
-      row.appendChild(askCell);
-      row.appendChild(actionCell);
-
-      fragment.appendChild(row);
-    });
-    symbolList.appendChild(fragment);
-  }
-
-  function initSymbolSelect() {
-    symbolSelect.innerHTML = "";
-    Object.keys(state.symbols).forEach(sym => {
-      const opt = document.createElement("option");
-      opt.value = sym;
-      opt.textContent = sym;
-      if (sym === state.selectedSymbol) opt.selected = true;
-      symbolSelect.appendChild(opt);
-    });
-
-    symbolSelect.addEventListener("change", e => {
-      selectSymbol(e.target.value);
-    });
-  }
-
-  function selectSymbol(symbol) {
-    state.selectedSymbol = symbol;
-    selectedSymbolLabel.textContent = "Symbol: " + symbol;
-    chartSymbolLabel.textContent = symbol;
-    initChart();
-    updateOrderPanel();
-  }
-
-  function updateOrderPanel() {
-    const sym = state.symbols[state.selectedSymbol];
-    if (!sym) return;
-    const bid = sym.price - sym.spread / 2;
-    const ask = sym.price + sym.spread / 2;
-    bidDisplay.textContent = fmtNum(bid, sym.type === "fx" ? 5 : 2);
-    askDisplay.textContent = fmtNum(ask, sym.type === "fx" ? 5 : 2);
-  }
-
-  refreshBtn.addEventListener("click", () => {
-    updateSymbolPrices(true);
-  });
-
-  // auto tick prices
-  setInterval(() => {
-    if (!state.user) return;
-    updateSymbolPrices(true);
-  }, 3000);
-
-  // -----------------------------
-  // CHART INIT
-  // -----------------------------
   function initChart() {
-    const base = state.symbols[state.selectedSymbol].price;
-    state.chartData = generateChartData(base);
-    drawChart();
-  }
-
-  window.addEventListener("resize", () => {
-    drawChart();
-  });
-
-  // -----------------------------
-  // ORDERS & POSITIONS
-  // -----------------------------
-  buyBtn.addEventListener("click", () => placeOrder("buy"));
-  sellBtn.addEventListener("click", () => placeOrder("sell"));
-
-  function placeOrder(side) {
-    const vol = parseFloat(volumeInput.value);
-    if (!vol || vol <= 0) return;
-
-    const sym = state.symbols[state.selectedSymbol];
-    if (!sym) return;
-
-    const bid = sym.price - sym.spread / 2;
-    const ask = sym.price + sym.spread / 2;
-    const entryPrice = side === "buy" ? ask : bid;
-
-    const contractSize = getContractSize(state.selectedSymbol);
-    const notional = entryPrice * contractSize * vol;
-    const requiredMargin = notional / state.leverage;
-
-    if (requiredMargin > state.freeMargin) {
-      orderError.style.display = "block";
-      return;
-    } else {
-      orderError.style.display = "none";
+    if (chart) {
+      chart.remove();
     }
+    chart = LightweightCharts.createChart(chartContainer, {
+      layout: {
+        background: { color: "transparent" },
+        textColor: "#e5e7eb",
+      },
+      grid: {
+        vertLines: { color: "#1f2937" },
+        horzLines: { color: "#1f2937" },
+      },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      rightPriceScale: {
+        borderColor: "#1f2937",
+      },
+      crosshair: {
+        mode: LightweightCharts.CrosshairMode.Normal,
+      },
+      width: chartContainer.clientWidth,
+      height: chartContainer.clientHeight,
+    });
 
-    const pos = {
-      id: Date.now().toString() + Math.random().toString(16).slice(2),
-      symbol: state.selectedSymbol,
-      side,
-      volume: vol,
-      entryPrice,
-      time: new Date().toLocaleTimeString()
-    };
-    state.positions.push(pos);
-    calculatePnLAndMargins();
-    updateAccountUI();
-    updatePositionsTable();
-  }
+    candleSeries = chart.addCandlestickSeries({
+      upColor: "#22c55e",
+      downColor: "#ef4444",
+      borderVisible: false,
+      wickUpColor: "#22c55e",
+      wickDownColor: "#ef4444",
+    });
 
-  function closePosition(id) {
-    const index = state.positions.findIndex(p => p.id === id);
-    if (index === -1) return;
-
-    const pos = state.positions[index];
-    const sym = state.symbols[pos.symbol];
-    const midPrice = sym.price;
-    const contractSize = getContractSize(pos.symbol);
-    const direction = pos.side === "buy" ? 1 : -1;
-    const priceDiff = (midPrice - pos.entryPrice) * direction;
-    const pnl = priceDiff * contractSize * pos.volume;
-
-    state.balance += pnl;
-    state.positions.splice(index, 1);
-
-    calculatePnLAndMargins();
-    updateAccountUI();
-    updatePositionsTable();
-  }
-
-  function updatePositionsTable() {
-    positionsBody.innerHTML = "";
-    positionsCount.textContent = `${state.positions.length} positions`;
-
-    state.positions.forEach(pos => {
-      const sym = state.symbols[pos.symbol];
-      const mid = sym.price;
-      const contractSize = getContractSize(pos.symbol);
-      const direction = pos.side === "buy" ? 1 : -1;
-      const priceDiff = (mid - pos.entryPrice) * direction;
-      const pnl = priceDiff * contractSize * pos.volume;
-
-      const tr = document.createElement("tr");
-
-      const symTd = document.createElement("td");
-      symTd.textContent = pos.symbol;
-
-      const sideTd = document.createElement("td");
-      const pill = document.createElement("span");
-      pill.className = "pill " + (pos.side === "buy" ? "pill-buy" : "pill-sell");
-      pill.textContent = pos.side.toUpperCase();
-      sideTd.appendChild(pill);
-
-      const volTd = document.createElement("td");
-      volTd.textContent = fmtNum(pos.volume, 2);
-
-      const openTd = document.createElement("td");
-      openTd.textContent = fmtNum(pos.entryPrice, sym.type === "fx" ? 5 : 2);
-
-      const priceTd = document.createElement("td");
-      priceTd.textContent = fmtNum(mid, sym.type === "fx" ? 5 : 2);
-
-      const pnlTd = document.createElement("td");
-      pnlTd.textContent = fmtNum(pnl, 2);
-      pnlTd.style.color = pnl >= 0 ? "#4ade80" : "#fb7185";
-
-      const closeTd = document.createElement("td");
-      const closeBtn = document.createElement("button");
-      closeBtn.textContent = "×";
-      closeBtn.className = "secondary";
-      closeBtn.style.padding = "2px 6px";
-      closeBtn.style.fontSize = "0.7rem";
-      closeBtn.addEventListener("click", () => closePosition(pos.id));
-      closeTd.appendChild(closeBtn);
-
-      tr.appendChild(symTd);
-      tr.appendChild(sideTd);
-      tr.appendChild(volTd);
-      tr.appendChild(openTd);
-      tr.appendChild(priceTd);
-      tr.appendChild(pnlTd);
-      tr.appendChild(closeTd);
-
-      positionsBody.appendChild(tr);
+    window.addEventListener("resize", () => {
+      chart.applyOptions({
+        width: chartContainer.clientWidth,
+        height: chartContainer.clientHeight,
+      });
     });
   }
 
-  // initial symbol list before login (for layout)
-  renderSymbolList(currentTab);
+  // -------------------------
+  // DATA FETCHING
+  // -------------------------
+  async function fetchCandles(symbol, interval, bars) {
+    if (!API_KEY || API_KEY === "YOUR_TWELVEDATA_API_KEY_HERE") {
+      statusText.textContent = "Set your Twelve Data API key in the script.";
+      statusText.className = "muted danger";
+      return null;
+    }
+
+    statusText.textContent = "Loading candles…";
+    statusText.className = "muted";
+
+    const url = `${BASE_URL}/time_series?symbol=${encodeURIComponent(symbol)}&interval=${interval}&outputsize=${bars}&apikey=${API_KEY}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.status === "error") {
+        statusText.textContent = data.message || "API error.";
+        statusText.className = "muted danger";
+        console.error("API error:", data);
+        return null;
+      }
+
+      if (!data.values || !Array.isArray(data.values)) {
+        statusText.textContent = "No data returned.";
+        statusText.className = "muted danger";
+        console.error("Unexpected response:", data);
+        return null;
+      }
+
+      // values are typically sorted newest -> oldest, so reverse
+      const values = [...data.values].reverse();
+
+      const candles = values.map(v => ({
+        time: Math.floor(new Date(v.datetime).getTime() / 1000),
+        open: parseFloat(v.open),
+        high: parseFloat(v.high),
+        low: parseFloat(v.low),
+        close: parseFloat(v.close),
+      }));
+
+      statusText.textContent = `Loaded ${candles.length} bars • ${symbol} • ${interval}`;
+      statusText.className = "muted";
+
+      return {
+        candles,
+        last: candles[candles.length - 1] || null,
+      };
+    } catch (err) {
+      console.error(err);
+      statusText.textContent = "Network or CORS error fetching data.";
+      statusText.className = "muted danger";
+      return null;
+    }
+  }
+
+  // -------------------------
+  // UPDATE UI FROM DATA
+  // -------------------------
+  async function loadChartAndPrices() {
+    const symbol = symbolSelect.value;
+    const interval = intervalSelect.value;
+    const bars = barsSelect.value;
+
+    symbolTitle.textContent = symbol;
+    symbolSubtitle.textContent = `${interval} candles • Live FX market (via API)`;
+
+    const result = await fetchCandles(symbol, interval, bars);
+    if (!result || !result.candles || result.candles.length === 0) {
+      return;
+    }
+
+    candleSeries.setData(result.candles);
+
+    const last = result.last;
+    if (last) {
+      const o = last.open;
+      const h = last.high;
+      const l = last.low;
+      const c = last.close;
+
+      openVal.textContent = o.toFixed(5);
+      highVal.textContent = h.toFixed(5);
+      lowVal.textContent = l.toFixed(5);
+      closeVal.textContent = c.toFixed(5);
+
+      lastPriceEl.textContent = c.toFixed(5);
+      tradePriceEl.textContent = c.toFixed(5);
+    }
+  }
+
+  // -------------------------
+  // DEMO "TRADING" BUTTONS
+  // -------------------------
+  function registerTradeButtons() {
+    buyBtn.addEventListener("click", () => {
+      const symbol = symbolSelect.value;
+      const vol = volumeSelect.value;
+      const price = tradePriceEl.textContent || "–";
+      lastAction.textContent = `Demo BUY ${vol} lots of ${symbol} @ ${price}`;
+    });
+
+    sellBtn.addEventListener("click", () => {
+      const symbol = symbolSelect.value;
+      const vol = volumeSelect.value;
+      const price = tradePriceEl.textContent || "–";
+      lastAction.textContent = `Demo SELL ${vol} lots of ${symbol} @ ${price}`;
+    });
+  }
+
+  // -------------------------
+  // EVENT WIRING
+  // -------------------------
+  symbolSelect.addEventListener("change", loadChartAndPrices);
+  intervalSelect.addEventListener("change", loadChartAndPrices);
+  barsSelect.addEventListener("change", loadChartAndPrices);
+  refreshBtn.addEventListener("click", loadChartAndPrices);
+
+  // -------------------------
+  // INIT
+  // -------------------------
+  initChart();
+  registerTradeButtons();
+  loadChartAndPrices();
+
+  // Optional: refresh every 30s for a "live" feel (respect rate limits)
+  setInterval(loadChartAndPrices, 30000);
 </script>
 </body>
 </html>
